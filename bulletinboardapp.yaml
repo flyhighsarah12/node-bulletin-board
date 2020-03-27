@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulletinboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bulletinboard
+  template:
+    metadata:
+      labels:
+        app: bulletinboard
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: bulletin-board
+        image: bulletinboard
+        ports:
+        - containerPort: 6379
+          name: bulletinboard
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulletinboard
+spec:
+  ports:
+  - port: 6379
+  selector:
+    app: bulletinboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bulletinboard
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bulletinboard
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  minReadySeconds: 5 
+  template:
+    metadata:
+      labels:
+        app: bulletinboard
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: bulletinboard
+        image: containerazure.azurecr.io/bulletinboard:v1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 250m
+          limits:
+            cpu: 500m
+        env:
+        - name: bulletinboard
+          value: "DEV"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bulletinboard
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+  selector:
+    app: bulletinboard
